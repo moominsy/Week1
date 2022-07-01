@@ -42,47 +42,37 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tabs">
 
+        //TAB1//
         <LinearLayout
-            android:id = "@+id/LinearLayout1"
+            android:id="@+id/TAB1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
+            <Button
+                android:id="@+id/btnShowContact1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Show Contacts"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
             <ListView
                 android:id = "@+id/listView"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="match_parent" />
 
-            </ListView>
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/text1"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#4CAF50"
-            android:gravity="center"
-            android:text="TEXT 1"
-            android:visibility="visible" />
+        //TAB2//
 
-        <TextView
-            android:id="@+id/text2"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#4CAF50"
-            android:gravity="center"
-            android:text="TEXT 2"
-            android:visibility="visible" />
+        //TAB3//
 
-        <TextView
-            android:id="@+id/text3"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#4CAF50"
-            android:gravity="center"
-            android:text="TEXT 3"
-            android:visibility="visible" />
+
+
 
     </FrameLayout>
 
