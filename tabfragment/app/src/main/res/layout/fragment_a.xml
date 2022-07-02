@@ -6,11 +6,23 @@
     tools:context=".FragmentA">
 
     <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="frag1"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btnShowContact1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show Contacts"/>
+
+        <ListView
+            android:id = "@+id/listView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </LinearLayout>
+
 
 </RelativeLayout>
