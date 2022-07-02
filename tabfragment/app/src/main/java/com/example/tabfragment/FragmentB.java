@@ -1,15 +1,21 @@
 package com.example.tabfragment;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.GridView;
 
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.tabs.TabLayout;
+
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link FragmentC#newInstance} factory method to
+ * Use the {@link FragmentB#newInstance} factory method to
  * create an instance of this fragment.
  */
 public class FragmentB extends Fragment {
@@ -23,6 +29,9 @@ public class FragmentB extends Fragment {
     private String mParam1;
     private String mParam2;
 
+
+    MainActivity mainActivity;
+
     public FragmentB() {
         // Required empty public constructor
     }
@@ -33,16 +42,22 @@ public class FragmentB extends Fragment {
      *
      * @param param1 Parameter 1.
      * @param param2 Parameter 2.
-     * @return A new instance of fragment FragmentB.
+     * @return A new instance of fragment FragmentA.
      */
     // TODO: Rename and change types and number of parameters
-    public static FragmentC newInstance(String param1, String param2) {
-        FragmentC fragment = new FragmentC();
+    public static FragmentB newInstance(String param1, String param2) {
+        FragmentB fragment = new FragmentB();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mainActivity = (MainActivity)getActivity();
     }
 
     @Override
@@ -57,7 +72,29 @@ public class FragmentB extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_b, container, false);
+        super.onCreateView(inflater, container, savedInstanceState);
+        ViewGroup rootview = (ViewGroup)inflater.inflate(R.layout.grid_layout,container,false);
+
+        GridView gridView = (GridView) rootview.findViewById(R.id.grid_view);
+
+        // Instance of ImageAdapter Class
+        gridView.setAdapter(new ImageAdapter(mainActivity));
+
+        /**
+         * On Click event for Single Gridview Item
+         * */
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View v,
+                                    int position, long id) {
+
+                // Sending image id to FullScreenActivity
+                Intent i = new Intent(mainActivity.getApplicationContext(), FullImageActivity.class);
+                // passing array index
+                i.putExtra("id", position);
+                mainActivity.startActivity(i);
+            }
+        });
+        return rootview;
     }
 }
