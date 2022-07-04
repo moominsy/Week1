@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -23,6 +24,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.ListFragment;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -67,6 +69,9 @@ public class FragmentA extends Fragment {
     int check = 0;
     public static final int PERMISSIONS_REQUEST_READ_CONTACTS = 1;
     ArrayList<String> numberlist = new ArrayList<>();
+    ArrayList<String> namelist = new ArrayList<>();
+    ArrayList<HashMap<String, String>> list = new ArrayList<>();
+    HashMap<String, String> item = new HashMap<>();
 
 
     @Override
@@ -84,7 +89,8 @@ public class FragmentA extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_a, container, false);
-        ArrayAdapter adapter = new ArrayAdapter(this.getActivity(), android.R.layout.simple_list_item_1, numberlist) ;
+
+        SimpleAdapter adapter = new SimpleAdapter(this.getActivity(), list, android.R.layout.simple_list_item_2, new String[] {"name", "number"}, new int[]{android.R.id.text1, android.R.id.text2} ) ;
         ListView listview = (ListView) rootView.findViewById(R.id.listView) ;
         listview.setAdapter(adapter) ;
 
@@ -96,8 +102,18 @@ public class FragmentA extends Fragment {
                 requestContactPermission();
                 ArrayList<Contact> contactlist = getContacts();
                 ArrayList<String> numberlist1 = getnumberlist(contactlist);
-                for(int i = 0; i <numberlist1.size(); i++){
+                ArrayList<String> namelist1 = getnamelist(contactlist);
+                for(int i = 0; i <numberlist.size(); i++) {
+                    numberlist.remove(i);
+                    namelist.remove(i);
+                    list.remove(i);
+                }
+                for(int i = 0; i <numberlist1.size(); i++) {
                     numberlist.add(numberlist1.get(i));
+                    namelist.add(namelist1.get(i));
+                    item.put("name", namelist.get(i));
+                    item.put("number", numberlist.get(i));
+                    list.add(i,item);
                 }
                 adapter.notifyDataSetChanged();
             }
@@ -187,7 +203,7 @@ public class FragmentA extends Fragment {
     private ArrayList<String> getnumberlist(ArrayList<Contact> contactlist){
         ArrayList<String> numberlist = new ArrayList<String>();
         if(contactlist.isEmpty()){
-            numberlist.add("01012345678");
+            numberlist.add("연락처가 비었습니다");
         }
         else{
             for(int i = 0; i < contactlist.size(); i++){
@@ -195,6 +211,19 @@ public class FragmentA extends Fragment {
             }
         }
         return numberlist;
+    }
+
+    private ArrayList<String> getnamelist(ArrayList<Contact> contactlist){
+        ArrayList<String> namelist = new ArrayList<String>();
+        if(contactlist.isEmpty()){
+            namelist.add("01000000000");
+        }
+        else{
+            for(int i = 0; i < contactlist.size(); i++){
+                namelist.add(contactlist.get(i).getName());
+            }
+        }
+        return namelist;
     }
 
 }
