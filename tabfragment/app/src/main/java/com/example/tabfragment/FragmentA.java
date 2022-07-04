@@ -91,6 +91,7 @@ public class FragmentA extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_a, container, false);
 
         SimpleAdapter adapter = new SimpleAdapter(this.getActivity(), list, android.R.layout.simple_list_item_2, new String[] {"name", "number"}, new int[]{android.R.id.text1, android.R.id.text2} ) ;
+        //ArrayAdapter adapter = new ArrayAdapter(this.getActivity(), android.R.layout.simple_list_item_1, namelist);
         ListView listview = (ListView) rootView.findViewById(R.id.listView) ;
         listview.setAdapter(adapter) ;
 
@@ -101,25 +102,33 @@ public class FragmentA extends Fragment {
             public void onClick(View v) {
                 requestContactPermission();
                 ArrayList<Contact> contactlist = getContacts();
-                ArrayList<String> numberlist1 = getnumberlist(contactlist);
                 ArrayList<String> namelist1 = getnamelist(contactlist);
-                for(int i = 0; i <numberlist.size(); i++) {
-                    numberlist.remove(i);
-                    namelist.remove(i);
-                    list.remove(i);
-                }
-                for(int i = 0; i <numberlist1.size(); i++) {
-                    numberlist.add(numberlist1.get(i));
+                ArrayList<String> numberlist1 = getnumberlist(contactlist);
+                namelist.clear();
+                numberlist.clear();
+                list.clear();
+                for(int i = 0; i <max(namelist.size(),namelist1.size()); i++) {
                     namelist.add(namelist1.get(i));
+                    numberlist.add(numberlist1.get(i));
+                }
+                for(int i = 0; i <numberlist.size(); i++) {
+                    item = new HashMap<>();
                     item.put("name", namelist.get(i));
                     item.put("number", numberlist.get(i));
-                    list.add(i,item);
+                    list.add(item);
                 }
                 adapter.notifyDataSetChanged();
             }
         });
 
         return rootView;
+    }
+
+    private int max(int size, int size1) {
+        if(size < size1 ){
+            return size1;
+        }
+        else return size;
     }
 
     private ArrayList<Contact> getContacts() {
