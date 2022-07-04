@@ -17,6 +17,26 @@
             android:layout_height="wrap_content"
             android:text="Show Contacts"/>
 
+        <Button
+            android:id="@+id/add"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ADD"/>
+
+        <Button
+            android:id="@+id/delete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DELETE"/>
+
+        <Button
+            android:id="@+id/modify"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="MODIFY"/>
+
+
         <ListView
             android:id="@+id/listView"
             android:layout_width="match_parent"

@@ -1,7 +1,11 @@
 package com.example.tabfragment;
 
 import android.annotation.TargetApi;
+import android.content.ContentProviderOperation;
+import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -11,7 +15,7 @@ import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -21,7 +25,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.ListFragment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,13 +68,26 @@ public class FragmentA extends Fragment {
     }
 
     Button btnShowContacts1;
-    Button btnShowContacts2;
+    Button add;
+    Button delete;
+    Button modify;
+    Context mcontext;
+
     int check = 0;
     public static final int PERMISSIONS_REQUEST_READ_CONTACTS = 1;
     ArrayList<String> numberlist = new ArrayList<>();
     ArrayList<String> namelist = new ArrayList<>();
+    ArrayList<Long> idlist = new ArrayList<>();
+    ArrayList<Uri> urllist = new ArrayList<>();
     ArrayList<HashMap<String, String>> list = new ArrayList<>();
     HashMap<String, String> item = new HashMap<>();
+
+
+    @Override
+    public void onAttach(Context context){
+        super.onAttach(context);
+        mcontext = context;
+    }
 
 
     @Override
@@ -96,6 +112,8 @@ public class FragmentA extends Fragment {
         listview.setAdapter(adapter) ;
 
         btnShowContacts1 = (Button) rootView.findViewById(R.id.btnShowContact1);
+        add = (Button) rootView.findViewById(R.id.add);
+        delete = (Button) rootView.findViewById(R.id.delete);
 
         btnShowContacts1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -104,12 +122,18 @@ public class FragmentA extends Fragment {
                 ArrayList<Contact> contactlist = getContacts();
                 ArrayList<String> namelist1 = getnamelist(contactlist);
                 ArrayList<String> numberlist1 = getnumberlist(contactlist);
+                ArrayList<Uri> urllist1 = geturllist(contactlist);
+                ArrayList<Long> idlist1 = getidlist(contactlist);
                 namelist.clear();
                 numberlist.clear();
+                urllist.clear();
+                idlist.clear();
                 list.clear();
                 for(int i = 0; i <max(namelist.size(),namelist1.size()); i++) {
                     namelist.add(namelist1.get(i));
                     numberlist.add(numberlist1.get(i));
+                    urllist.add(urllist1.get(i));
+                    idlist.add(idlist1.get(i));
                 }
                 for(int i = 0; i <numberlist.size(); i++) {
                     item = new HashMap<>();
@@ -120,6 +144,56 @@ public class FragmentA extends Fragment {
                 adapter.notifyDataSetChanged();
             }
         });
+
+        add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_INSERT, Uri.parse("content://contacts/people"));
+                startActivity(intent);
+            }
+
+        });
+
+        delete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                /*
+                Intent intent = new Intent(Intent.ACTION_INSERT, Uri.parse(String.valueOf(urllist.get(0))));
+                startActivity(intent);
+
+                 */
+                deleteContact(mcontext, idlist.get(0) );
+            }
+        });
+
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View v, int position, long id) {
+
+
+
+                Intent editIntent = new Intent(Intent.ACTION_EDIT);
+                editIntent.setDataAndType(urllist.get(position), ContactsContract.Contacts.CONTENT_ITEM_TYPE);
+                editIntent.putExtra("finishActivityOnSaveCompleted", true);
+                startActivity(editIntent);
+
+            }
+        });
+
+        listview.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View v, int position, long id) {
+
+                Intent editIntent = new Intent(Intent.ACTION_VIEW);
+                editIntent.setDataAndType(urllist.get(position), ContactsContract.Contacts.CONTENT_ITEM_TYPE);
+                editIntent.putExtra("finishActivityOnSaveCompleted", true);
+                startActivity(editIntent);
+                return false;
+            }
+        });
+
+
+
 
         return rootView;
     }
@@ -134,11 +208,21 @@ public class FragmentA extends Fragment {
     private ArrayList<Contact> getContacts() {
         //TODO get contacts code here
         Toast.makeText(this.getActivity(), "Get contacts ....", Toast.LENGTH_LONG).show();
+
+        //
+        int lookupKeyIndex;
+        int idIndex;
+        String currentLookupKey;
+        long currentId;
+        Uri selectedContactUri;
+        //
+
         Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
         String[] projection = new String[] {
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                ContactsContract.Contacts.LOOKUP_KEY,
                 ContactsContract.CommonDataKinds.Phone.NUMBER, // 연락처
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME }; // 연락처 이름
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.Contacts._ID}; // 연락처 이름
 
         String[] selectionArgs = null;
 
@@ -148,12 +232,30 @@ public class FragmentA extends Fragment {
 
         ArrayList<Contact> contactlist = new ArrayList<Contact>();
 
+        //
         if (contactCursor.moveToFirst()) {
+
+            int idindex = contactCursor.getColumnIndex("_id");
+
             do {
                 Contact acontact = new Contact();
-                acontact.setPhotoid(contactCursor.getLong(0));
+                //acontact.setPhotoid(contactCursor.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY));
                 acontact.setPhonenum(contactCursor.getString(1));
                 acontact.setName(contactCursor.getString(2));
+
+
+
+                lookupKeyIndex = contactCursor.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY);
+                currentLookupKey = contactCursor.getString(lookupKeyIndex);
+                idIndex = contactCursor.getColumnIndex(ContactsContract.Contacts._ID);
+                currentId = contactCursor.getLong(idIndex);
+                selectedContactUri = ContactsContract.Contacts.getLookupUri(currentId, currentLookupKey);
+                acontact.setURL(selectedContactUri);
+
+                int id = contactCursor.getInt(idindex);
+                acontact.setPhotoid(currentId);
+
+
                 contactlist.add(acontact);
             } while (contactCursor.moveToNext());
         }
@@ -233,6 +335,36 @@ public class FragmentA extends Fragment {
             }
         }
         return namelist;
+    }
+
+    private ArrayList<Long> getidlist(ArrayList<Contact> contactlist){
+        ArrayList<Long> idlist = new ArrayList<Long>();
+        if(contactlist.isEmpty()){
+            idlist.add(0L);
+        }
+        else{
+            for(int i = 0; i < contactlist.size(); i++){
+                idlist.add(contactlist.get(i).getPhotoid());
+            }
+        }
+        return idlist;
+    }
+
+    private ArrayList<Uri> geturllist(ArrayList<Contact> contactlist){
+        ArrayList<Uri> urllist = new ArrayList<Uri>();
+        if(contactlist.isEmpty()){
+        }
+        else{
+            for(int i = 0; i < contactlist.size(); i++){
+                urllist.add(contactlist.get(i).getURL());
+            }
+        }
+        return urllist;
+    }
+    private void deleteContact(Context context, long rawContactId) {
+        context.getContentResolver().delete(ContactsContract.RawContacts.CONTENT_URI,
+                ContactsContract.RawContacts.CONTACT_ID + " = " + rawContactId,
+                null);
     }
 
 }
