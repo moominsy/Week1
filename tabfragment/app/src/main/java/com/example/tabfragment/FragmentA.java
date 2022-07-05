@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -71,7 +72,7 @@ public class FragmentA extends Fragment {
     Button add;
     Button delete;
     Button modify;
-    Context mcontext;
+    static Context mcontext;
 
     int check = 0;
     public static final int PERMISSIONS_REQUEST_READ_CONTACTS = 1;
@@ -113,7 +114,7 @@ public class FragmentA extends Fragment {
 
         btnShowContacts1 = (Button) rootView.findViewById(R.id.btnShowContact1);
         add = (Button) rootView.findViewById(R.id.add);
-        delete = (Button) rootView.findViewById(R.id.delete);
+        //delete = (Button) rootView.findViewById(R.id.delete);
 
         btnShowContacts1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -154,17 +155,24 @@ public class FragmentA extends Fragment {
 
         });
 
+        /*
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /*
-                Intent intent = new Intent(Intent.ACTION_INSERT, Uri.parse(String.valueOf(urllist.get(0))));
-                startActivity(intent);
 
-                 */
-                deleteContact(mcontext, idlist.get(0) );
+                try {
+                    //deleteContact(mcontext, numberlist.get(0), namelist.get(0));
+                    //mcontext.getContentResolver().delete(urllist.get(1), null, null);
+                    //Toast.makeText(mcontext, "SUCCESS", Toast.LENGTH_LONG).show();
+                }
+                catch(Exception e) {
+                    Toast.makeText(mcontext, "ERROR", Toast.LENGTH_LONG).show();
+                }
+
+
             }
         });
+        */
 
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -207,7 +215,7 @@ public class FragmentA extends Fragment {
 
     private ArrayList<Contact> getContacts() {
         //TODO get contacts code here
-        Toast.makeText(this.getActivity(), "Get contacts ....", Toast.LENGTH_LONG).show();
+        //Toast.makeText(this.getActivity(), "Get contacts ....", Toast.LENGTH_LONG).show();
 
         //
         int lookupKeyIndex;
@@ -215,6 +223,7 @@ public class FragmentA extends Fragment {
         String currentLookupKey;
         long currentId;
         Uri selectedContactUri;
+        long rawcontactsid;
         //
 
         Uri uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
@@ -222,7 +231,8 @@ public class FragmentA extends Fragment {
                 ContactsContract.Contacts.LOOKUP_KEY,
                 ContactsContract.CommonDataKinds.Phone.NUMBER, // 연락처
                 ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.Contacts._ID}; // 연락처 이름
+                ContactsContract.Contacts._ID,
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID}; // 연락처 이름
 
         String[] selectionArgs = null;
 
@@ -230,19 +240,29 @@ public class FragmentA extends Fragment {
 
         Cursor contactCursor = getActivity().getContentResolver().query(uri, projection, null, selectionArgs, sortOrder);
 
+        /*
+        Uri uri1 = ContactsContract.RawContacts.CONTENT_URI;
+        String[] projection1 = new String[] {
+                ContactsContract.RawContacts._ID}; // 연락처 이름
+
+        String[] selectionArgs1 = null;
+
+        String sortOrder1 = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " COLLATE LOCALIZED ASC";
+
+        Cursor contactCursor1 = getActivity().getContentResolver().query(uri1, projection1, null, selectionArgs1, sortOrder1);
+         */
+
         ArrayList<Contact> contactlist = new ArrayList<Contact>();
 
         //
         if (contactCursor.moveToFirst()) {
 
-            int idindex = contactCursor.getColumnIndex("_id");
 
             do {
                 Contact acontact = new Contact();
                 //acontact.setPhotoid(contactCursor.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY));
                 acontact.setPhonenum(contactCursor.getString(1));
                 acontact.setName(contactCursor.getString(2));
-
 
 
                 lookupKeyIndex = contactCursor.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY);
@@ -252,8 +272,15 @@ public class FragmentA extends Fragment {
                 selectedContactUri = ContactsContract.Contacts.getLookupUri(currentId, currentLookupKey);
                 acontact.setURL(selectedContactUri);
 
-                int id = contactCursor.getInt(idindex);
-                acontact.setPhotoid(currentId);
+                int contactid = contactCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID);
+                Long contactId = contactCursor.getLong(contactid);
+                acontact.setPhotoid(contactId);
+
+                /*
+                int contactsid = contactCursor.getColumnIndex(ContactsContract.RawContacts._ID);
+                rawcontactsid = contactCursor.getLong(contactsid);
+                acontact.setPhotoid(rawcontactsid);
+                 */
 
 
                 contactlist.add(acontact);
@@ -361,10 +388,121 @@ public class FragmentA extends Fragment {
         }
         return urllist;
     }
-    private void deleteContact(Context context, long rawContactId) {
-        context.getContentResolver().delete(ContactsContract.RawContacts.CONTENT_URI,
-                ContactsContract.RawContacts.CONTACT_ID + " = " + rawContactId,
-                null);
+
+
+
+    private long getRawContactIdByName(String givenName, String familyName)
+    {
+        ContentResolver contentResolver = mcontext.getContentResolver();
+
+        // Query raw_contacts table by display name field ( given_name family_name ) to get raw contact id.
+
+        // Create query column array.
+        String queryColumnArr[] = {ContactsContract.RawContacts._ID};
+
+        // Create where condition clause.
+        String displayName = givenName + " " + familyName;
+        String whereClause = ContactsContract.RawContacts.DISPLAY_NAME_PRIMARY + " = '" + displayName + "'";
+
+        // Query raw contact id through RawContacts uri.
+        Uri rawContactUri = ContactsContract.RawContacts.CONTENT_URI;
+
+        // Return the query cursor.
+        Cursor cursor = contentResolver.query(rawContactUri, queryColumnArr, whereClause, null, null);
+
+        long rawContactId = -1;
+
+        if(cursor!=null)
+        {
+            // Get contact count that has same display name, generally it should be one.
+            int queryResultCount = cursor.getCount();
+            // This check is used to avoid cursor index out of bounds exception. android.database.CursorIndexOutOfBoundsException
+            if(queryResultCount > 0)
+            {
+                // Move to the first row in the result cursor.
+                cursor.moveToFirst();
+                // Get raw_contact_id.
+                int id = cursor.getColumnIndex(ContactsContract.RawContacts._ID);
+                rawContactId = cursor.getLong(id);
+            }
+        }
+
+        return rawContactId;
     }
 
+    private void deleteContact(String givenName, String familyName)
+    {
+        // First select raw contact id by given name and family name.
+        long rawContactId = getRawContactIdByName(givenName, familyName);
+        ContentResolver contentResolver = mcontext.getContentResolver();
+
+        //******************************* delete data table related data ****************************************
+        // Data table content process uri.
+        Uri dataContentUri = ContactsContract.Data.CONTENT_URI;
+
+        // Create data table where clause.
+        StringBuffer dataWhereClauseBuf = new StringBuffer();
+        dataWhereClauseBuf.append(ContactsContract.Data.RAW_CONTACT_ID);
+        dataWhereClauseBuf.append(" = ");
+        dataWhereClauseBuf.append(rawContactId);
+        // Delete all this contact related data in data table.
+        contentResolver.delete(dataContentUri, dataWhereClauseBuf.toString(), null);
+        Toast.makeText(mcontext, "2", Toast.LENGTH_LONG).show();
+
+        //******************************** delete raw_contacts table related data ***************************************
+        // raw_contacts table content process uri.
+        Uri rawContactUri = ContactsContract.RawContacts.CONTENT_URI;
+
+        // Create raw_contacts table where clause.
+        StringBuffer rawContactWhereClause = new StringBuffer();
+        rawContactWhereClause.append(ContactsContract.RawContacts._ID);
+        rawContactWhereClause.append(" = ");
+        rawContactWhereClause.append(rawContactId);
+
+        // Delete raw_contacts table related data.
+        contentResolver.delete(rawContactUri, rawContactWhereClause.toString(), null);
+
+        //******************************** delete contacts table related data ***************************************
+        // contacts table content process uri.
+        Uri contactUri = ContactsContract.Contacts.CONTENT_URI;
+
+        // Create contacts table where clause.
+        StringBuffer contactWhereClause = new StringBuffer();
+        contactWhereClause.append(ContactsContract.Contacts._ID);
+        contactWhereClause.append(" = ");
+        contactWhereClause.append(rawContactId);
+
+        // Delete raw_contacts table related data.
+        contentResolver.delete(contactUri, contactWhereClause.toString(), null);
+
+    }
+
+    public static boolean deleteContact(Context ctx, String phone, String name) {
+        Uri contactUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phone));
+        Cursor cur = ctx.getContentResolver().query(contactUri, null, null, null, null);
+        try {
+            if (cur.moveToFirst()) {
+                do {
+                    int id = cur.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME);
+                    if (cur.getString(id).equalsIgnoreCase(name)) {
+                        id = cur.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY);
+                        String lookupKey = cur.getString(id);
+                        Uri uri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKey);
+                        Toast.makeText(mcontext, "SUCCCESS", Toast.LENGTH_LONG).show();
+                        ctx.getContentResolver().delete(uri, null, null);
+                        return true;
+                    }
+
+                } while (cur.moveToNext());
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getStackTrace());
+            Toast.makeText(mcontext, "ERROR", Toast.LENGTH_LONG).show();
+
+        } finally {
+            cur.close();
+        }
+        return false;
+    }
 }
